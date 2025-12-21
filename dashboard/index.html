@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SafeBrowse AI - Parent Dashboard</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fa;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #7f8c8d;
+      margin-bottom: 30px;
+    }
+    .stats {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      flex: 1;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .stat-label {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    .high { color: #e74c3c; }
+    .medium { color: #f39c12; }
+    .low { color: #27ae60; }
+    table {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      border-collapse: collapse;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ecf0f1;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+    }
+    .badge.high { background: #e74c3c; }
+    .badge.medium { background: #f39c12; }
+    .badge.low { background: #27ae60; }
+  </style>
+</head>
+<body>
+  <h1>SafeBrowse AI - Parent Dashboard</h1>
+  <p class="subtitle">Real-time monitoring and safety insights for your child's online activity</p>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">High Risk Events</div>
+      <div class="stat-value high" id="high-risk">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Medium Risk Events</div>
+      <div class="stat-value medium" id="medium-risk">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Events Monitored</div>
+      <div class="stat-value" id="total-events">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Addiction Score</div>
+      <div class="stat-value medium" id="addiction-score">0</div>
+    </div>
+  </div>
+
+  <h2>Recent Activity</h2>
+  <table id="events-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>URL</th>
+        <th>Risk Score</th>
+        <th>Category</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="4" style="text-align:center;color:#7f8c8d;">Loading events...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function loadStats() {
+      try {
+        const res = await fetch("http://localhost:8000/stats");
+        const data = await res.json();
+        document.getElementById("high-risk").textContent = data.high_risk;
+        document.getElementById("medium-risk").textContent = data.medium_risk;
+        document.getElementById("total-events").textContent = data.total_events;
+        document.getElementById("addiction-score").textContent = data.addiction_score;
+      } catch (e) {
+        console.error("Failed to load stats", e);
+      }
+    }
+
+    async function loadEvents() {
+      try {
+        const res = await fetch("http://localhost:8000/events");
+        const data = await res.json();
+        const tbody = document.querySelector("#events-table tbody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7f8c8d;">No events yet</td></tr>';
+          return;
+        }
+
+        data.forEach(ev => {
+          const tr = document.createElement("tr");
+          const riskClass = ev.risk_score >= 70 ? "high" : (ev.risk_score >= 40 ? "medium" : "low");
+          const time = new Date(ev.timestamp).toLocaleString();
+
+          tr.innerHTML = `
+            <td>${time}</td>
+            <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">${ev.url}</td>
+            <td><span class="badge ${riskClass}">${ev.risk_score}</span></td>
+            <td>${ev.category}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error("Failed to load events", e);
+      }
+    }
+
+    loadStats();
+    loadEvents();
+    setInterval(() => {
+      loadStats();
+      loadEvents();
+    }, 10000);
+  </script>
+</body>
+</html>
