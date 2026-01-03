@@ -1,0 +1,9 @@
+Client / Browser / Tool
+        ↓
+FastAPI Backend (Stateless)
+        ↓
+Feature Engineering
+        ↓
+Anomaly Detection Model
+        ↓
+Risk Scoring + Explanation
